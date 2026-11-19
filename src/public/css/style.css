@@ -1,0 +1,10 @@
+:root { font-family: system-ui, sans-serif; color: #1f2937; background: #f8fafc; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+.entete { background: #fff; border-bottom: 1px solid #e5e7eb; padding: 1rem; }
+.logo { color: #166534; font-weight: 700; text-decoration: none; }
+.conteneur { max-width: 960px; min-height: 70vh; margin: auto; padding: 1rem; }
+.hero { background: #fff; border-radius: .5rem; padding: 2rem 1.25rem; text-align: center; }
+.bouton { display: inline-block; background: #166534; color: #fff; border-radius: .35rem; padding: .7rem 1rem; text-decoration: none; }
+.pied { padding: 1.5rem 1rem; text-align: center; color: #64748b; }
+@media (min-width: 768px) { .conteneur { padding: 2rem; } }
