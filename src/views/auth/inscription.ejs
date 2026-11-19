@@ -1,0 +1,13 @@
+<%- include('../partials/header') %>
+<h1>Créer un compte</h1>
+<% if (erreurs.length) { %><div class="alert"><% erreurs.forEach(e => { %><p><%= e.msg %></p><% }) %></div><% } %>
+<form method="post" action="/inscription" class="formulaire">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <label>Prénom <input name="prenom" required maxlength="100" value="<%= anciennesValeurs.prenom || '' %>"></label>
+  <label>Nom <input name="nom" required maxlength="100" value="<%= anciennesValeurs.nom || '' %>"></label>
+  <label>E-mail <input type="email" name="email" required maxlength="255" value="<%= anciennesValeurs.email || '' %>"></label>
+  <label>Téléphone <input name="telephone" maxlength="30" value="<%= anciennesValeurs.telephone || '' %>"></label>
+  <label>Mot de passe <input type="password" name="mot_de_passe" minlength="10" required></label>
+  <button class="bouton" type="submit">Créer mon compte</button>
+</form>
+<%- include('../partials/footer') %>

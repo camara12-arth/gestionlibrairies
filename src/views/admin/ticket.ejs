@@ -1,0 +1,1 @@
+<%- include('../partials/header') %><h1>Ticket <%=vente.reference%></h1><%lignes.forEach(l=>{%><p><%=l.quantite%> × <%=l.titre%> — <%=l.prix_unitaire%> FCFA</p><%})%><h2>Total : <%=vente.total%> FCFA</h2><button onclick="window.print()">Imprimer</button><%- include('../partials/footer') %>

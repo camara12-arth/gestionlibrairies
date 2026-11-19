@@ -1,0 +1,10 @@
+<%- include('../partials/header') %>
+<h1>Mot de passe oublié</h1>
+<% if (message) { %><p class="alert"><%= message %></p><% } %>
+<% if (erreurs.length) { %><div class="alert"><% erreurs.forEach(e => { %><p><%= e.msg %></p><% }) %></div><% } %>
+<form method="post" action="/mot-de-passe-oublie" class="formulaire">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <label>E-mail <input type="email" name="email" required></label>
+  <button class="bouton" type="submit">Envoyer le lien</button>
+</form>
+<%- include('../partials/footer') %>

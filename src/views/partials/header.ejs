@@ -10,5 +10,17 @@
 <body>
   <header class="entete">
     <a class="logo" href="/">Librairie du Mali</a>
+    <nav>
+      <% if (utilisateur) { %>
+        <span><%= utilisateur.prenom %></span>
+        <form method="post" action="/deconnexion" class="deconnexion">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <button type="submit">Déconnexion</button>
+        </form>
+      <% } else { %>
+        <a href="/connexion">Connexion</a>
+        <a href="/inscription">Inscription</a>
+      <% } %>
+    </nav>
   </header>
   <main class="conteneur">

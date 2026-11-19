@@ -1,0 +1,1 @@
+const express=require('express');const {estConnecte,aLeRole}=require('../middlewares/auth');const controller=require('../controllers/stockController');const router=express.Router();router.use(estConnecte,aLeRole('admin','libraire'));router.get('/admin/stock',controller.listerMouvements);router.post('/admin/stock/:livreId/mouvement',controller.mouvement);module.exports=router;

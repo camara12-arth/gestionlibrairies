@@ -1,0 +1,4 @@
+<%- include('../partials/header') %>
+<h1>Mon panier</h1>
+<% if (!articles.length) { %><p>Votre panier est vide.</p><% } else { %><section><% articles.forEach(({livre,quantite}) => { %><article class="ligne-panier"><h2><%= livre.titre %></h2><form method="post" action="/panier/modifier/<%= livre.id %>" class="formulaire"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="number" name="quantite" value="<%= quantite %>" min="1" max="<%= livre.disponible %>"><button type="submit">Modifier</button></form><p><%= (livre.prix*quantite).toLocaleString('fr-FR') %> FCFA</p><form method="post" action="/panier/retirer/<%= livre.id %>"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit">Retirer</button></form></article><% }) %></section><p><strong>Total : <%= total.toLocaleString('fr-FR') %> FCFA</strong></p><a class="bouton" href="/commande/valider">Valider ma commande</a><% } %>
+<%- include('../partials/footer') %>

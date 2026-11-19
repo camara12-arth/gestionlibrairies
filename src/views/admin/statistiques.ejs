@@ -1,0 +1,1 @@
+<%- include('../partials/header') %><h1>Statistiques</h1><h2>Meilleures ventes</h2><%meilleures.forEach(l=>{%><p><%=l.titre%> : <%=l.ventes%></p><%})%><h2>Ventes sur 30 jours</h2><%periode.forEach(p=>{%><p><%=p.jour%> : <%=p.ventes%> FCFA</p><%})%><a class="bouton" href="/admin/export/ventes.csv">Exporter CSV</a><%- include('../partials/footer') %>

@@ -1,0 +1,3 @@
+<%- include('../partials/header') %>
+<h1>Mes commandes</h1><% if (!commandes.length) { %><p>Aucune commande.</p><% } %><% commandes.forEach(c => { %><article class="carte-livre"><h2><%= c.reference %></h2><p>Statut : <%= c.statut %></p><p>Total : <%= c.total.toLocaleString('fr-FR') %> FCFA</p><a href="/commande/<%=c.id%>/facture">Voir la facture PDF</a></article><% }) %>
+<%- include('../partials/footer') %>

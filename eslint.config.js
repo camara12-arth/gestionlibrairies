@@ -13,7 +13,10 @@ module.exports = [
         Buffer: 'readonly',
         describe: 'readonly',
         test: 'readonly',
-        expect: 'readonly'
+        expect: 'readonly',
+        jest: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly'
       }
     },
     rules: {

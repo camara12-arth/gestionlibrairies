@@ -1,0 +1,3 @@
+<%- include('../partials/header') %>
+<h1>Mouvements de stock</h1><%mouvements.forEach(m=>{%><p><%=m.cree_le%> — <%=m.titre%> : <%=m.type%> × <%=m.quantite%> — <%=m.motif%></p><%})%>
+<%- include('../partials/footer') %>

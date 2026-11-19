@@ -1,0 +1,3 @@
+<%- include('../partials/header') %>
+<h1>Commande confirmée</h1><p>Référence : <strong><%= commande.reference %></strong></p><p>Statut : <strong><%= commande.statut %></strong></p><p>Total : <strong><%= commande.total.toLocaleString('fr-FR') %> FCFA</strong></p><a class="bouton" href="/commande/<%= commande.id %>/facture">Imprimer la facture</a>
+<%- include('../partials/footer') %>

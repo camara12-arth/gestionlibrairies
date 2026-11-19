@@ -1,0 +1,15 @@
+<%- include('../partials/header') %>
+<h1>Catalogue</h1>
+<form method="get" class="formulaire filtres">
+  <input name="q" value="<%= filtres.q || '' %>" placeholder="Titre, auteur ou ISBN">
+  <select name="categorie"><option value="">Toutes les catégories</option><% categories.forEach(c => { %><option value="<%= c.id %>" <%= String(filtres.categorie)===String(c.id)?'selected':'' %>><%= c.nom %></option><% }) %></select>
+  <input type="number" min="0" name="prix_min" value="<%= filtres.prix_min || '' %>" placeholder="Prix minimum">
+  <input type="number" min="0" name="prix_max" value="<%= filtres.prix_max || '' %>" placeholder="Prix maximum">
+  <label><input type="checkbox" name="disponible" value="1" <%= filtres.disponible?'checked':'' %>> Disponible uniquement</label>
+  <button class="bouton" type="submit">Rechercher</button>
+</form>
+<section class="grille-livres"><% livres.forEach(livre => { %>
+  <article class="carte-livre"><h2><a href="/livres/<%= livre.id %>"><%= livre.titre %></a></h2><p><%= livre.auteurs %></p><strong><%= livre.prix.toLocaleString('fr-FR') %> FCFA</strong><p><%= livre.disponible > 0 ? 'Disponible' : 'Épuisé' %></p></article>
+<% }) %></section>
+<% const pages=Math.ceil(total/limite); if(pages>1){ %><nav class="pagination"><% for(let p=1;p<=pages;p++){ %><a href="/livres?page=<%=p%>&q=<%=encodeURIComponent(filtres.q||'')%>&categorie=<%=filtres.categorie||''%>"><%=p%></a><% } %></nav><% } %>
+<%- include('../partials/footer') %>

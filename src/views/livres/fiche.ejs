@@ -1,0 +1,5 @@
+<%- include('../partials/header') %>
+<article><h1><%= livre.titre %></h1><p><strong>Auteur(s) :</strong> <%= livre.auteurs %></p><p><strong>Éditeur :</strong> <%= livre.editeur_nom %></p><p><strong>ISBN :</strong> <%= livre.isbn %></p><p><%= livre.resume || 'Résumé non disponible.' %></p><p class="prix"><%= livre.prix.toLocaleString('fr-FR') %> FCFA</p>
+<% if (livre.disponible > 0) { %><form method="post" action="/panier/ajouter"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><input type="hidden" name="livreId" value="<%= livre.id %>"><label>Quantité <input type="number" name="quantite" value="1" min="1" max="<%= livre.disponible %>"></label><button class="bouton" type="submit">Ajouter au panier</button></form><% } else { %><p><strong>Épuisé</strong></p><% } %>
+<% if (utilisateur && utilisateur.role === 'client') { %><form method="post" action="/livres/<%= livre.id %>/souhait"><input type="hidden" name="_csrf" value="<%= csrfToken %>"><button type="submit">Ajouter/retirer des souhaits</button></form><% } %>
+</article><%- include('../partials/footer') %>

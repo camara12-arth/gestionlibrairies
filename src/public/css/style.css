@@ -8,3 +8,16 @@ body { margin: 0; }
 .bouton { display: inline-block; background: #166534; color: #fff; border-radius: .35rem; padding: .7rem 1rem; text-decoration: none; }
 .pied { padding: 1.5rem 1rem; text-align: center; color: #64748b; }
 @media (min-width: 768px) { .conteneur { padding: 2rem; } }
+.grille-livres { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
+.carte-livre, .ligne-panier { background: #fff; border: 1px solid #e5e7eb; border-radius: .5rem; padding: 1rem; margin-bottom: 1rem; }
+.filtres { max-width: none; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.pagination { display: flex; gap: .5rem; flex-wrap: wrap; }
+.pagination a { border: 1px solid #cbd5e1; border-radius: .25rem; padding: .5rem .75rem; }
+.entete { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+.entete nav { display: flex; align-items: center; gap: .75rem; }
+.deconnexion { display: inline; }
+.deconnexion button { border: 0; background: transparent; color: #166534; cursor: pointer; }
+.formulaire { display: grid; gap: 1rem; max-width: 520px; }
+.formulaire label { display: grid; gap: .35rem; font-weight: 600; }
+.formulaire input { width: 100%; padding: .7rem; border: 1px solid #cbd5e1; border-radius: .35rem; }
+.alert { background: #fff7ed; border: 1px solid #fdba74; border-radius: .35rem; padding: .75rem; }

@@ -1,0 +1,3 @@
+<%- include('../partials/header') %>
+<h1>Ma liste de souhaits</h1><% if (!livres.length) { %><p>Votre liste est vide.</p><% } %><section class="grille-livres"><% livres.forEach(livre => { %><article class="carte-livre"><h2><a href="/livres/<%= livre.id %>"><%= livre.titre %></a></h2><p><%= livre.prix.toLocaleString('fr-FR') %> FCFA</p></article><% }) %></section>
+<%- include('../partials/footer') %>

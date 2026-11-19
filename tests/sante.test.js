@@ -11,8 +11,9 @@ describe('Application de base', () => {
     expect(reponse.status).toBe(200);
   });
 
-  test('retourne une page 404', async () => {
-    const reponse = await request(app).get('/page-inexistante');
-    expect(reponse.status).toBe(404);
+  test('redirige les routes privées sans session', async () => {
+    const reponse = await request(app).get('/admin');
+    expect(reponse.status).toBe(302);
+    expect(reponse.headers.location).toBe('/connexion');
   });
 });

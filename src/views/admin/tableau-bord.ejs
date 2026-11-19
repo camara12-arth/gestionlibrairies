@@ -1,0 +1,5 @@
+<%- include('../partials/header') %>
+<h1>Tableau de bord</h1>
+<section class="grille-livres"><article class="carte-livre"><h2>Ventes du jour</h2><strong><%= ventesJour.toLocaleString('fr-FR') %> FCFA</strong></article><article class="carte-livre"><h2>Ventes du mois</h2><strong><%= ventesMois.toLocaleString('fr-FR') %> FCFA</strong></article><article class="carte-livre"><h2>Commandes à traiter</h2><strong><%= commandesANaitre %></strong></article></section>
+<h2>Alertes de stock</h2><% alertes.forEach(l=>{%><p><a href="/admin/livres"><%=l.titre%></a> : <strong><%=l.quantite%></strong> / seuil <%=l.seuil_alerte%></p><%})%>
+<%- include('../partials/footer') %>
