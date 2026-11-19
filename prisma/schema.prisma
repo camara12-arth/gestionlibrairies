@@ -1,0 +1,543 @@
+// Prisma Configuration for PostgreSQL
+// Bookstore & Library Management System (Système de Gestion de Librairie)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// -------------------------------------------------------------
+// ENUMS
+// -------------------------------------------------------------
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  BOOKSELLER
+  CUSTOMER
+}
+
+enum BookFormat {
+  PAPERBACK      // Livre broché
+  HARDCOVER      // Livre relié
+  POCKET         // Format poche
+  COMICS_MANGA   // Bande dessinée / Manga
+  ART_BOOK       // Beaux-arts / Grand format
+  EBOOK          // Format numérique
+  AUDIOBOOK      // Livre audio
+}
+
+enum AuthorRole {
+  AUTHOR
+  CO_AUTHOR
+  TRANSLATOR
+  ILLUSTRATOR
+  PREFACER
+  EDITOR
+}
+
+enum StockMovementType {
+  RESTOCK              // Entrée de stock (réception commande fournisseur)
+  SALE                 // Sortie de stock (vente caisse)
+  CUSTOMER_RETURN      // Entrée (retour client)
+  SUPPLIER_RETURN      // Sortie (retour d'invendus / office distributeur)
+  INVENTORY_ADJUSTMENT // Régularisation suite à inventaire
+  DAMAGED_OR_LOST      // Démarque inconnue / livre abîmé / perte
+}
+
+enum SaleStatus {
+  PENDING
+  PAID
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  CASH           // Espèces
+  CREDIT_CARD    // Carte bancaire
+  CHECK          // Chèque
+  GIFT_VOUCHER   // Bon d'achat / Chèque cadeau
+  PASS_CULTURE   // Pass Culture
+  BANK_TRANSFER  // Virement
+  OTHER
+}
+
+enum ReservationStatus {
+  PENDING              // Demandée par le client
+  ORDERED_TO_SUPPLIER  // En commande chez le distributeur
+  RECEIVED_IN_STORE    // Reçu en librairie, mis de côté
+  CLIENT_NOTIFIED      // Client prévenu (SMS / Email)
+  COLLECTED            // Retiré par le client
+  CANCELLED            // Annulée
+  EXPIRED              // Expirée (non réclamée)
+}
+
+enum SupplierOrderStatus {
+  DRAFT
+  ORDERED
+  PARTIALLY_RECEIVED
+  RECEIVED
+  CANCELLED
+}
+
+enum SupplierReturnStatus {
+  DRAFT
+  REQUESTED
+  APPROVED
+  SHIPPED
+  CREDITED
+  REJECTED
+}
+
+enum BorrowingStatus {
+  ACTIVE
+  RETURNED
+  OVERDUE
+  LOST
+}
+
+// -------------------------------------------------------------
+// USERS & CUSTOMERS
+// -------------------------------------------------------------
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  firstName    String
+  lastName     String
+  phone        String?
+  role         UserRole  @default(CUSTOMER)
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Profile client & fidélité
+  customerProfile CustomerProfile?
+
+  // Relations métier
+  processedSales      Sale[]            @relation("CashierSales")
+  managedMovements    StockMovement[]   @relation("UserStockMovements")
+  createdSupplierOrders SupplierOrder[] @relation("UserSupplierOrders")
+
+  @@index([email])
+  @@index([role])
+}
+
+model CustomerProfile {
+  id             String    @id @default(uuid())
+  userId         String    @unique
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  loyaltyCardNum String?   @unique
+  loyaltyPoints  Int       @default(0)
+  addressLine1   String?
+  addressLine2   String?
+  postalCode     String?
+  city           String?
+  country        String    @default("France")
+  notes          String?   @db.Text
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  sales          Sale[]
+  reservations   Reservation[]
+  borrowings     Borrowing[]
+
+  @@index([loyaltyCardNum])
+}
+
+// -------------------------------------------------------------
+// CATALOG: BOOKS, AUTHORS, PUBLISHERS, CATEGORIES
+// -------------------------------------------------------------
+
+model Book {
+  id              String      @id @default(uuid())
+  isbn13          String      @unique // EAN / ISBN 13 chiffres (ex: 9782070368228)
+  isbn10          String?     @unique
+  title           String
+  subtitle        String?
+  originalTitle   String?
+  summary         String?     @db.Text
+  publicationDate DateTime?
+  editionYear     Int?
+  pages           Int?
+  language        String      @default("Français")
+  format          BookFormat  @default(PAPERBACK)
+  coverImageUrl   String?
+  
+  // Prix & Tarification (Loi Lang - Prix unique du livre en France)
+  priceTTC        Decimal     @db.Decimal(10, 2) // Prix public TTC
+  vatRate         Decimal     @default(5.50) @db.Decimal(5, 2) // Taux TVA (5.5% pour les livres physiques en France)
+  costPriceHT     Decimal?    @db.Decimal(10, 2) // Prix d'achat remisé auprès du fournisseur HT
+
+  // Gestion des stocks
+  stockQuantity   Int         @default(0)
+  minStockAlert   Int         @default(2) // Seuil d'alerte de réassort
+  isAvailable     Boolean     @default(true)
+
+  // Emplacement dans la librairie
+  locationId      String?
+  location        ShelfLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+
+  // Éditeur & Collection
+  publisherId     String
+  publisher       Publisher   @relation(fields: [publisherId], references: [id], onDelete: Restrict)
+  collectionId    String?
+  collection      BookCollection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relations
+  authors         BookAuthor[]
+  categories      BookCategory[]
+  stockMovements  StockMovement[]
+  saleItems       SaleItem[]
+  supplierItems   SupplierOrderItem[]
+  supplierReturnItems SupplierReturnItem[]
+  reservations    Reservation[]
+  borrowings      Borrowing[]
+
+  @@index([isbn13])
+  @@index([title])
+  @@index([publisherId])
+  @@index([locationId])
+}
+
+model Author {
+  id          String       @id @default(uuid())
+  firstName   String
+  lastName    String
+  pseudonym   String?
+  bio         String?      @db.Text
+  birthDate   DateTime?
+  deathDate   DateTime?
+  nationality String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  books       BookAuthor[]
+
+  @@index([lastName, firstName])
+}
+
+model BookAuthor {
+  bookId    String
+  authorId  String
+  role      AuthorRole @default(AUTHOR)
+  order     Int        @default(1) // Ordre de citation des auteurs sur la couverture
+
+  book      Book       @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  author    Author     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@id([bookId, authorId])
+  @@index([authorId])
+  @@index([bookId])
+}
+
+model Publisher {
+  id              String           @id @default(uuid())
+  name            String           @unique
+  legalName       String?
+  website         String?
+  contactEmail    String?
+  phone           String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  books           Book[]
+  collections     BookCollection[]
+
+  @@index([name])
+}
+
+model BookCollection {
+  id          String     @id @default(uuid())
+  name        String
+  publisherId String
+  publisher   Publisher  @relation(fields: [publisherId], references: [id], onDelete: Cascade)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  books       Book[]
+
+  @@unique([name, publisherId])
+}
+
+model Category {
+  id          String         @id @default(uuid())
+  name        String
+  slug        String         @unique
+  description String?
+  parentId    String?
+  parent      Category?      @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children    Category[]     @relation("CategoryHierarchy")
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  books       BookCategory[]
+
+  @@index([slug])
+}
+
+model BookCategory {
+  bookId     String
+  categoryId String
+  isPrimary  Boolean   @default(false)
+
+  book       Book      @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  category   Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([bookId, categoryId])
+  @@index([categoryId])
+  @@index([bookId])
+}
+
+// -------------------------------------------------------------
+// SHELF & LOCATION IN STORE (RAYONS & EMPLACEMENTS)
+// -------------------------------------------------------------
+
+model ShelfLocation {
+  id          String   @id @default(uuid())
+  zone        String   // Ex: "Rez-de-chaussée", "Mezzanine"
+  aisle       String   // Allée / Rayon principal (ex: "Littérature Française", "Manga")
+  shelf       String   // Travée / Étagère (ex: "E3")
+  level       String?  // Tablette / Niveau (ex: "Niveau 2")
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  books       Book[]
+
+  @@unique([zone, aisle, shelf, level])
+}
+
+// -------------------------------------------------------------
+// STOCK MOVEMENTS & TRACEABILITY
+// -------------------------------------------------------------
+
+model StockMovement {
+  id            String            @id @default(uuid())
+  bookId        String
+  book          Book              @relation(fields: [bookId], references: [id], onDelete: Restrict)
+  type          StockMovementType
+  quantity      Int               // Nombre d'exemplaires déplacés (+ ou -)
+  previousStock Int
+  newStock      Int
+  reference     String?           // Référence de facture, ticket, ou bordereau
+  notes         String?           @db.Text
+  userId        String?           // Utilisateur ayant effectué le mouvement
+  user          User?             @relation("UserStockMovements", fields: [userId], references: [id], onDelete: SetNull)
+  createdAt     DateTime          @default(now())
+
+  @@index([bookId, createdAt])
+  @@index([type])
+}
+
+// -------------------------------------------------------------
+// SALES & CHECKOUT (VENTES ET ENCAISSEMENT)
+// -------------------------------------------------------------
+
+model Sale {
+  id             String          @id @default(uuid())
+  invoiceNumber  String          @unique // Ex: "VT-2026-00042"
+  status         SaleStatus      @default(PAID)
+  paymentMethod  PaymentMethod   @default(CREDIT_CARD)
+  
+  subtotalHT     Decimal         @db.Decimal(10, 2)
+  taxAmount      Decimal         @db.Decimal(10, 2)
+  discountAmount Decimal         @default(0.00) @db.Decimal(10, 2)
+  totalTTC       Decimal         @db.Decimal(10, 2)
+
+  // Client (optionnel si vente anonyme au comptoir)
+  customerId     String?
+  customer       CustomerProfile? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  // Vendeur / Caissier
+  cashierId      String?
+  cashier        User?           @relation("CashierSales", fields: [cashierId], references: [id], onDelete: SetNull)
+
+  notes          String?         @db.Text
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  items          SaleItem[]
+
+  @@index([invoiceNumber])
+  @@index([createdAt])
+  @@index([customerId])
+}
+
+model SaleItem {
+  id          String   @id @default(uuid())
+  saleId      String
+  sale        Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  bookId      String
+  book        Book     @relation(fields: [bookId], references: [id], onDelete: Restrict)
+  quantity    Int      @default(1)
+  unitPriceTTC Decimal @db.Decimal(10, 2)
+  vatRate     Decimal  @db.Decimal(5, 2)
+  discountTTC Decimal  @default(0.00) @db.Decimal(10, 2)
+  totalTTC    Decimal  @db.Decimal(10, 2)
+
+  @@index([saleId])
+  @@index([bookId])
+}
+
+// -------------------------------------------------------------
+// CUSTOMER RESERVATIONS (RÉSERVATIONS & COMMANDES CLIENT)
+// -------------------------------------------------------------
+
+model Reservation {
+  id                String            @id @default(uuid())
+  referenceNumber   String            @unique // Ex: "RES-2026-0012"
+  customerId        String
+  customer          CustomerProfile   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  bookId            String
+  book              Book              @relation(fields: [bookId], references: [id], onDelete: Restrict)
+  quantity          Int               @default(1)
+  status            ReservationStatus @default(PENDING)
+  notes             String?           @db.Text
+  
+  reservedAt        DateTime          @default(now())
+  notifiedAt        DateTime?         // Quand le client a été prévenu de la réception
+  collectedAt       DateTime?         // Quand le client a récupéré son livre
+  expiresAt         DateTime?         // Date limite de retrait avant remise en rayon
+
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@index([referenceNumber])
+  @@index([customerId])
+  @@index([status])
+}
+
+// -------------------------------------------------------------
+// SUPPLIERS, ORDERS & RETURNS (FOURNISSEURS, DISTRIBUTEURS & RETOURS)
+// -------------------------------------------------------------
+
+model Supplier {
+  id               String          @id @default(uuid())
+  name             String          @unique // Ex: "Interforum", "Hachette Distribution", "MDS"
+  distributorCode  String?         // Code distributeur Dilicom / FEL
+  contactName      String?
+  email            String?
+  phone            String?
+  address          String?
+  website          String?
+  notes            String?         @db.Text
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  orders           SupplierOrder[]
+  returns          SupplierReturn[]
+
+  @@index([name])
+}
+
+model SupplierOrder {
+  id               String              @id @default(uuid())
+  orderNumber      String              @unique // Ex: "CMD-FOURN-2026-0008"
+  supplierId       String
+  supplier         Supplier            @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  status           SupplierOrderStatus @default(DRAFT)
+  
+  totalHT          Decimal             @default(0.00) @db.Decimal(10, 2)
+  orderedDate      DateTime?
+  expectedDelivery DateTime?
+  receivedDate     DateTime?
+  
+  createdById      String?
+  createdBy        User?               @relation("UserSupplierOrders", fields: [createdById], references: [id], onDelete: SetNull)
+  notes            String?             @db.Text
+
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  items            SupplierOrderItem[]
+
+  @@index([orderNumber])
+  @@index([supplierId])
+  @@index([status])
+}
+
+model SupplierOrderItem {
+  id               String        @id @default(uuid())
+  supplierOrderId  String
+  supplierOrder    SupplierOrder @relation(fields: [supplierOrderId], references: [id], onDelete: Cascade)
+  bookId           String
+  book             Book          @relation(fields: [bookId], references: [id], onDelete: Restrict)
+  
+  quantityOrdered  Int
+  quantityReceived Int           @default(0)
+  unitCostHT       Decimal       @db.Decimal(10, 2)
+  totalHT          Decimal       @db.Decimal(10, 2)
+
+  @@index([supplierOrderId])
+  @@index([bookId])
+}
+
+model SupplierReturn {
+  id               String               @id @default(uuid())
+  returnNumber     String               @unique // Ex: "RET-2026-0003"
+  supplierId       String
+  supplier         Supplier             @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  status           SupplierReturnStatus @default(DRAFT)
+  creditNoteRef    String?              // Référence de l'avoir reçu du fournisseur
+  
+  shippedDate      DateTime?
+  creditedDate     DateTime?
+  totalCreditHT    Decimal?             @db.Decimal(10, 2)
+  notes            String?              @db.Text
+
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+
+  items            SupplierReturnItem[]
+
+  @@index([returnNumber])
+  @@index([supplierId])
+}
+
+model SupplierReturnItem {
+  id               String         @id @default(uuid())
+  supplierReturnId String
+  supplierReturn   SupplierReturn @relation(fields: [supplierReturnId], references: [id], onDelete: Cascade)
+  bookId           String
+  book             Book           @relation(fields: [bookId], references: [id], onDelete: Restrict)
+  
+  quantityReturned Int
+  unitCreditHT     Decimal?       @db.Decimal(10, 2)
+
+  @@index([supplierReturnId])
+  @@index([bookId])
+}
+
+// -------------------------------------------------------------
+// LIBRARY LOANS / MEDIATHEQUE (PRÊTS & EMPRUNTS)
+// -------------------------------------------------------------
+
+model Borrowing {
+  id          String          @id @default(uuid())
+  customerId  String
+  customer    CustomerProfile @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  bookId      String
+  book        Book            @relation(fields: [bookId], references: [id], onDelete: Restrict)
+  status      BorrowingStatus @default(ACTIVE)
+
+  borrowedAt  DateTime        @default(now())
+  dueDate     DateTime        // Date limite de retour
+  returnedAt  DateTime?       // Date réelle de restitution
+  lateFee     Decimal?        @default(0.00) @db.Decimal(10, 2)
+  notes       String?
+
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([customerId])
+  @@index([bookId])
+  @@index([status])
+}
